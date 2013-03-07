@@ -101,6 +101,9 @@ public class ERFBLine {
   }
 
   public String type() {
+    if (_type == null) {
+      _type = "Item";
+    }
     return _type;
   }
 

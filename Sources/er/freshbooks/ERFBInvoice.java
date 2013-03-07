@@ -20,7 +20,7 @@ public class ERFBInvoice {
   private String _status; // sent, viewed or draft [default]
   private NSTimestamp _date;
   private String poNumber;
-  private Integer _discount;
+  private Float _discount;
   private String _notes;
   private String _currencyCode;
   private String _language;
@@ -45,7 +45,7 @@ public class ERFBInvoice {
   public void setId(String id) {
     _id = id;
   }
-  
+
   public ERFBClient client() {
     return _client;
   }
@@ -71,6 +71,9 @@ public class ERFBInvoice {
   }
 
   public String status() {
+    if (_status == null) {
+      _status = "draft";
+    }
     return _status;
   }
 
@@ -94,11 +97,11 @@ public class ERFBInvoice {
     this.poNumber = poNumber;
   }
 
-  public Integer discount() {
+  public Float discount() {
     return _discount;
   }
 
-  public void setDiscount(Integer discount) {
+  public void setDiscount(Float discount) {
     _discount = discount;
   }
 
@@ -197,21 +200,25 @@ public class ERFBInvoice {
   public void setLines(NSArray<ERFBLine> lines) {
     _lines = lines;
   }
-  
+
   public static ERXML.E transformToXml(ERFBInvoice invoice) {
-    ERXML.E invoiceXmlElement = new ERXML.E("client");
+    ERXML.E invoiceXmlElement = new ERXML.E("invoice");
     {
-      
+
       invoiceXmlElement.e("invoice_id", invoice.id());
       invoiceXmlElement.e("first_name", invoice.firstName());
       invoiceXmlElement.e("last_name", invoice.lastName());
       invoiceXmlElement.e("currency_code", invoice.currencyCode());
-      invoiceXmlElement.e("language", invoice.language());
-      invoiceXmlElement.e("notes", invoice.notes());
+      if ((invoice.language() != null) && (invoice.language().length() > 0)) {
+        invoiceXmlElement.e("language", invoice.language());
+      }
+      if ((invoice.notes() != null) && (invoice.notes().length() > 0)) {
+        invoiceXmlElement.e("notes", invoice.notes());
+      }
       invoiceXmlElement.e("organization", invoice.organization());
       invoiceXmlElement.e("vat_name", invoice.vatName());
       invoiceXmlElement.e("vat_number", invoice.vatNumber());
-      invoiceXmlElement.e("vat_number", invoice.notes());
+      invoiceXmlElement.e("notes", invoice.notes());
       invoiceXmlElement.e("return_uri", invoice.returnUrl());
       invoiceXmlElement.e("status", invoice.status());
       invoiceXmlElement.e("terms", invoice.terms());
@@ -239,7 +246,7 @@ public class ERFBInvoice {
           }
         }
       }
-      
+
       if (invoice.primaryAddress() != null) {
         invoiceXmlElement.e("p_street1", invoice.primaryAddress().street1());
         invoiceXmlElement.e("p_street2", invoice.primaryAddress().street2());
@@ -248,21 +255,32 @@ public class ERFBInvoice {
         invoiceXmlElement.e("p_country", invoice.primaryAddress().country());
         invoiceXmlElement.e("p_code", invoice.primaryAddress().postalCode());
       }
-      
+
       if ((invoice.lines() != null) && (!invoice.lines().isEmpty())) {
         ERXML.E lines = invoiceXmlElement.e("lines");
         for (ERFBLine line: invoice.lines()) {
           ERXML.E xmlContact = lines.e("line");
           {
             xmlContact.e("line_id", line.id());
-            xmlContact.e("amount", line.amount().toString());
+            if (line.amount() != null) {
+              xmlContact.e("amount", line.amount().toString());
+            }
+            if (line.unitCost() != null) {
+              xmlContact.e("unit_cost", line.unitCost().toString());
+            }
             xmlContact.e("name", line.name());
             xmlContact.e("description", line.description());
-            xmlContact.e("quantity", line.quantity().toString());
+            if (line.quantity() != null) {
+              xmlContact.e("quantity", line.quantity().toString());
+            }
             xmlContact.e("tax1_name", line.tax1Name());
             xmlContact.e("tax2_name", line.tax2Name());
-            xmlContact.e("tax1_percent", line.tax1Percent().toString());
-            xmlContact.e("tax2_percent", line.tax2Percent().toString());
+            if (line.tax1Percent() != null) {
+              xmlContact.e("tax1_percent", line.tax1Percent().toString());
+            }
+            if (line.tax2Percent() != null) {
+              xmlContact.e("tax2_percent", line.tax2Percent().toString());
+            }
             xmlContact.e("type", line.type());
           }
         }
@@ -270,11 +288,11 @@ public class ERFBInvoice {
     }
     return invoiceXmlElement;
   }
-  
+
   public static ERFBInvoice transformFromResponse(ERXML.E xmlElement) {
     ERFBInvoice invoice = new ERFBInvoice();
     ERFBApi api = new ERFBApi();
-    
+
     invoice.setId(xmlElement.child("invoice_id").text());
     invoice.setFirstName(xmlElement.child("first_name").text());
     invoice.setLastName(xmlElement.child("last_name").text());
@@ -291,7 +309,7 @@ public class ERFBInvoice {
     invoice.setTerms(xmlElement.child("terms").text());
     invoice.setPoNumber(xmlElement.child("po_number").text());
     invoice.setClient(api.getClient(xmlElement.child("client_id").text()));
-    
+
     if ((xmlElement.child("date") != null) && (xmlElement.child("date").text() != null)) {
       Date dateAsString;
       try {
@@ -302,13 +320,13 @@ public class ERFBInvoice {
         NSLog.err.appendln("Can't format invoice date: " + e.getMessage());
       }
     }
-    
+
     if ((xmlElement.child("discount") != null) && (xmlElement.child("discount").text() != null)) {
-      invoice.setDiscount(Integer.valueOf(xmlElement.child("discount").text()));      
+      invoice.setDiscount(Float.valueOf(xmlElement.child("discount").text()));      
     }
-    
+
     invoice.setInvoiceNumber(xmlElement.child("number").text());
-    
+
     NSMutableArray<ERFBContact> contacts = new NSMutableArray<ERFBContact>();
     ERXML.E contactsElement = xmlElement.child("contacts");
     if (contactsElement.children() != null) {
@@ -341,10 +359,10 @@ public class ERFBInvoice {
       }
     }
     invoice.setLines(items.immutableClone());
-        
+
     return invoice;
   }
-  
+
   @Override
   public String toString() {
     return "Invoice of id " + id() + " for " + organization();
