@@ -350,6 +350,27 @@ public class ERFBApi {
   }
 
   /**
+   * Create a payment
+   */
+  public void createPayment(ERFBPayment payment) {
+    ERXML.Doc doc = ERXML.doc();
+    ERXML.E rootElement = doc.root("request").set("method", "payment.create");
+    ERXML.E clientElement = ERFBPayment.transformToXml(payment);
+    rootElement.add(clientElement);
+    ERXML.Doc result = executeRequest(doc);
+    String status = result.root().get("status");
+    if ("ok".equals(status)) {
+      Set<E> descendents = result.root().descendents("payment_id");
+      for (ERXML.E descendent: descendents) {
+        String invoiceIdValue = ((ERXML.E)descendent).text();
+        if (invoiceIdValue != null) {
+          payment.setId(invoiceIdValue);
+        }
+      }
+    }
+  }
+  
+  /**
    * Execute the HTTP request and return the XML doc from the response
    * 
    * @param requestBody The body of the HTTP request
