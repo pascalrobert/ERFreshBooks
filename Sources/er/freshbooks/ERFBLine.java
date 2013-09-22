@@ -131,7 +131,7 @@ public class ERFBLine {
     }
     
     if ((xmlElement.child("tax2_percent") != null) && (xmlElement.child("tax2_percent").text() != null)) {
-      invoice.setTax1Percent(Float.valueOf(xmlElement.child("tax2_percent").text()));
+      invoice.setTax2Percent(Float.valueOf(xmlElement.child("tax2_percent").text()));
     }
 
     if ((xmlElement.child("amount") != null) && (xmlElement.child("amount").text() != null)) {
