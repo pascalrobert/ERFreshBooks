@@ -125,26 +125,31 @@ public class ERFBApi {
       if (child instanceof ERXML.E) {
 
         int currentPage = 1;
-        String pageAsString = ((ERXML.E) child).get("page");
-        if (pageAsString != null)
-          Integer.valueOf(pageAsString);
 
         int totalPages = 1;
-        String pagesAsString = ((ERXML.E) child).get("pages");
-        if (pagesAsString != null)
-          Integer.valueOf(pagesAsString);
+        for (ERXML.E invoiceNode: ((ERXML.E) child).children("invoices")) {
+          String pagesAsString = invoiceNode.get("pages");
+          if (pagesAsString != null)
+            totalPages = Integer.valueOf(pagesAsString);
 
-        if (currentPage < totalPages) {
-          NSArray<ERFBInvoice> otherClients = getInvoices(filtersMap, currentPage + 1);
-          clients.addAll(otherClients);
-        } else {
-          if (child instanceof ERXML.E) {
-            Set<E> descendents = ((ERXML.E) child).descendents("invoice");
-            for (ERXML.E descendent: descendents) {
-              clients.addObject(ERFBInvoice.transformFromResponse(descendent));
-            }
+          String pageAsString = invoiceNode.get("page");
+          if (pageAsString != null)
+            currentPage = Integer.valueOf(pageAsString);
+        }
+
+
+        if (child instanceof ERXML.E) {
+          Set<E> descendents = ((ERXML.E) child).descendents("invoice");
+          for (ERXML.E descendent: descendents) {
+            clients.addObject(ERFBInvoice.transformFromResponse(descendent));
           }
         }
+
+        if (currentPage < totalPages) {
+          NSArray<ERFBInvoice> otherInvoices = getInvoices(filtersMap, currentPage + 1);
+          clients.addAll(otherInvoices);
+        } 
+
       }
     }
 
